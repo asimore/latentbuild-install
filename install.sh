@@ -2,11 +2,11 @@
 set -eu
 
 OWNER_REPO="asimore/latentbuild-install"
-VERSION="1.0.1"
+VERSION="1.0.2"
 METHOD="auto"
 REPO_ROOT=""
 RUN_DOCTOR="1"
-EXPECTED_SHA256="361614f3d5cace55d0c384ed7c97464c456bf799cbb5f8f5b1e44a9f628c37eb"
+EXPECTED_SHA256="e5b557f094b3083754afd3b2c0f813a37c3abbaf673b5dad299b57c7598faf8b"
 
 usage() {
   cat <<'EOF'
@@ -15,8 +15,8 @@ Usage: install.sh [options]
 Install the LatentBuild CLI from the public GitHub Release wheel.
 
 Options:
-  --version <version>      Version to install. Defaults to 1.0.1.
-  --sha256 <digest>        Expected wheel SHA-256. Defaults to 1.0.1 digest.
+  --version <version>      Version to install. Defaults to 1.0.2.
+  --sha256 <digest>        Expected wheel SHA-256. Defaults to 1.0.2 digest.
   --method <auto|pipx|venv|pip-user>
                            Install method. Defaults to auto.
   --repo-root <path>       Run lb doctor against this repo after install.
