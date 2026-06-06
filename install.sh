@@ -6,6 +6,7 @@ VERSION="1.0.6"
 METHOD="auto"
 REPO_ROOT=""
 RUN_DOCTOR="1"
+UPDATE_PATH="1"
 EXPECTED_SHA256="62816ffc8ef8cd2ba661b07a550f11570c1f2be3ad2dc16fa9cd196c6a43e368"
 
 usage() {
@@ -21,6 +22,7 @@ Options:
                            Install method. Defaults to auto.
   --repo-root <path>       Run lb doctor against this repo after install.
   --no-doctor              Skip lb doctor after install.
+  --no-path-update         Do not update shell startup files.
   -h, --help               Show this help.
 
 Example:
@@ -62,6 +64,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-doctor)
       RUN_DOCTOR="0"
+      shift
+      ;;
+    --no-path-update)
+      UPDATE_PATH="0"
       shift
       ;;
     -h|--help)
@@ -136,9 +142,59 @@ if [ "$METHOD" = "auto" ]; then
   fi
 fi
 
+append_path_once() {
+  profile="$1"
+  bin_dir="$2"
+  marker="LatentBuild CLI PATH"
+  [ -n "$profile" ] || return 0
+  [ -f "$profile" ] || : > "$profile"
+  if grep -F "$marker" "$profile" >/dev/null 2>&1; then
+    return 0
+  fi
+  cat >> "$profile" <<EOF
+
+# ${marker}
+case ":\$PATH:" in
+  *":${bin_dir}:"*) ;;
+  *) export PATH="${bin_dir}:\$PATH" ;;
+esac
+EOF
+}
+
+persist_path() {
+  bin_dir="$1"
+  [ "$UPDATE_PATH" = "1" ] || return 0
+  [ -n "${HOME:-}" ] || return 0
+
+  append_path_once "${HOME}/.profile" "$bin_dir"
+  shell_name="$(basename "${SHELL:-}")"
+  case "$shell_name" in
+    zsh)
+      append_path_once "${HOME}/.zprofile" "$bin_dir"
+      append_path_once "${HOME}/.zshrc" "$bin_dir"
+      ;;
+    bash)
+      append_path_once "${HOME}/.bash_profile" "$bin_dir"
+      append_path_once "${HOME}/.bashrc" "$bin_dir"
+      ;;
+    *)
+      append_path_once "${HOME}/.zprofile" "$bin_dir"
+      append_path_once "${HOME}/.zshrc" "$bin_dir"
+      append_path_once "${HOME}/.bash_profile" "$bin_dir"
+      append_path_once "${HOME}/.bashrc" "$bin_dir"
+      ;;
+  esac
+}
+
 if [ "$METHOD" = "pipx" ]; then
   command -v pipx >/dev/null 2>&1 || die "pipx is not installed; rerun with --method venv"
   pipx install --force "${TMPDIR}/${WHEEL}"
+  USER_BIN="${LATENTBUILD_USER_BIN:-${HOME}/.local/bin}"
+  if [ -d "$USER_BIN" ]; then
+    PATH="${USER_BIN}:${PATH}"
+    export PATH
+    persist_path "$USER_BIN"
+  fi
 elif [ "$METHOD" = "venv" ]; then
   INSTALL_HOME="${LATENTBUILD_HOME:-${HOME}/.latentbuild}"
   VENV_DIR="${INSTALL_HOME}/venv"
@@ -151,20 +207,22 @@ elif [ "$METHOD" = "venv" ]; then
   ln -sf "${VENV_DIR}/bin/lb-enroll-local" "${USER_BIN}/lb-enroll-local"
   PATH="${USER_BIN}:${PATH}"
   export PATH
+  persist_path "$USER_BIN"
 else
   "$PYTHON_BIN" -m pip --version >/dev/null 2>&1 || "$PYTHON_BIN" -m ensurepip --user >/dev/null 2>&1 || die "pip is required"
   "$PYTHON_BIN" -m pip install --user --upgrade "${TMPDIR}/${WHEEL}"
   USER_BASE="$("$PYTHON_BIN" -m site --user-base)"
   PATH="${USER_BASE}/bin:${PATH}"
   export PATH
+  persist_path "${USER_BASE}/bin"
 fi
 
 if ! command -v lb >/dev/null 2>&1; then
   cat >&2 <<EOF
 latentbuild-install: installed package, but 'lb' is not on PATH.
-Add Python's user bin directory to PATH, then retry:
+Add the LatentBuild command directory to PATH, then retry:
 
-  export PATH="\$(${PYTHON_BIN} -m site --user-base)/bin:\$PATH"
+  export PATH="${USER_BIN:-$("$PYTHON_BIN" -m site --user-base)/bin}:\$PATH"
 
 EOF
   exit 1
@@ -184,6 +242,7 @@ cat <<'EOF'
 LatentBuild CLI installed.
 
 Next step:
+  open a new terminal, or run: export PATH="$HOME/.local/bin:$PATH"
   cd /path/to/customer-repo
   lb-enroll-local "$PWD" <repo-id>
 EOF
