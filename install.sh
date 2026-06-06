@@ -17,7 +17,7 @@ Install the LatentBuild CLI from the public GitHub Release wheel.
 Options:
   --version <version>      Version to install. Defaults to 1.0.0.
   --sha256 <digest>        Expected wheel SHA-256. Defaults to 1.0.0 digest.
-  --method <auto|pipx|pip-user>
+  --method <auto|pipx|venv|pip-user>
                            Install method. Defaults to auto.
   --repo-root <path>       Run lb doctor against this repo after install.
   --no-doctor              Skip lb doctor after install.
@@ -75,8 +75,8 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$METHOD" in
-  auto|pipx|pip-user) ;;
-  *) die "--method must be auto, pipx, or pip-user" ;;
+  auto|pipx|venv|pip-user) ;;
+  *) die "--method must be auto, pipx, venv, or pip-user" ;;
 esac
 
 PYTHON_BIN="${PYTHON_BIN:-}"
@@ -132,13 +132,25 @@ if [ "$METHOD" = "auto" ]; then
   if command -v pipx >/dev/null 2>&1; then
     METHOD="pipx"
   else
-    METHOD="pip-user"
+    METHOD="venv"
   fi
 fi
 
 if [ "$METHOD" = "pipx" ]; then
-  command -v pipx >/dev/null 2>&1 || die "pipx is not installed; rerun with --method pip-user"
+  command -v pipx >/dev/null 2>&1 || die "pipx is not installed; rerun with --method venv"
   pipx install --force "${TMPDIR}/${WHEEL}"
+elif [ "$METHOD" = "venv" ]; then
+  INSTALL_HOME="${LATENTBUILD_HOME:-${HOME}/.latentbuild}"
+  VENV_DIR="${INSTALL_HOME}/venv"
+  USER_BIN="${LATENTBUILD_USER_BIN:-${HOME}/.local/bin}"
+  "$PYTHON_BIN" -m venv "$VENV_DIR"
+  "${VENV_DIR}/bin/python" -m pip install --upgrade pip >/dev/null
+  "${VENV_DIR}/bin/python" -m pip install --upgrade "${TMPDIR}/${WHEEL}"
+  mkdir -p "$USER_BIN"
+  ln -sf "${VENV_DIR}/bin/lb" "${USER_BIN}/lb"
+  ln -sf "${VENV_DIR}/bin/lb-enroll-local" "${USER_BIN}/lb-enroll-local"
+  PATH="${USER_BIN}:${PATH}"
+  export PATH
 else
   "$PYTHON_BIN" -m pip --version >/dev/null 2>&1 || "$PYTHON_BIN" -m ensurepip --user >/dev/null 2>&1 || die "pip is required"
   "$PYTHON_BIN" -m pip install --user --upgrade "${TMPDIR}/${WHEEL}"

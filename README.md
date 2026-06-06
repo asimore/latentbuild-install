@@ -28,7 +28,8 @@ lb-enroll-local "$PWD" <repo-id>
 
 - downloads the pinned `latentbuild` wheel from this repo's GitHub Release
 - verifies the wheel SHA-256
-- installs with `pipx` when available, otherwise `pip --user`
+- installs with `pipx` when available, otherwise a dedicated user venv at
+  `~/.latentbuild/venv`
 - verifies `lb --help`
 - optionally runs `lb doctor`
 
