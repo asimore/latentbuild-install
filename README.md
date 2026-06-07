@@ -46,17 +46,17 @@ lb-enroll-local "$PWD" <repo-id>
 Current release:
 
 ```text
-v1.0.7
+v1.0.8
 ```
 
 Wheel:
 
 ```text
-latentbuild-1.0.7-py3-none-any.whl
+latentbuild-1.0.8-py3-none-any.whl
 ```
 
 SHA-256:
 
 ```text
-ed7090cfa8c21179196042f25147adc041df05e0979901779471628581dd9159
+00bfedb80c81ec481c2cb1b9c9b590c8c671dcb2727fd68e653f3e2d531370ab
 ```
