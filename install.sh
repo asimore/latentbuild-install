@@ -2,12 +2,12 @@
 set -eu
 
 OWNER_REPO="asimore/latentbuild-install"
-VERSION="1.1.6"
+VERSION="1.1.7"
 METHOD="auto"
 REPO_ROOT=""
 RUN_DOCTOR="1"
 UPDATE_PATH="1"
-EXPECTED_SHA256="dc14031853b44805373d52c3577199f2b67e3e349c4e60bdc9eaaa3c95f7e156"
+EXPECTED_SHA256="04e088034f18d904e3a3c53fc2e6214a3db62eedd4719358dfb53cb4edc0fc20"
 
 usage() {
   cat <<'EOF'
@@ -16,7 +16,7 @@ Usage: install.sh [options]
 Install the LatentBuild CLI from the public GitHub Release wheel.
 
 Options:
-  --version <version>      Version to install. Defaults to 1.1.6.
+  --version <version>      Version to install. Defaults to 1.1.7.
   --sha256 <digest>        Expected wheel SHA-256. Defaults to 1.1.6 digest.
   --method <auto|pipx|venv|pip-user>
                            Install method. Defaults to auto.
